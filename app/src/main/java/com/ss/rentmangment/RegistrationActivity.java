@@ -3,9 +3,13 @@ package com.ss.rentmangment;
 import android.app.DatePickerDialog;
 import android.content.Intent;
 import android.content.SharedPreferences;
+import android.graphics.Bitmap;
+import android.graphics.BitmapFactory;
 import android.os.Bundle;
 import android.text.TextUtils;
-import android.widget.DatePicker;
+import android.util.Base64;
+import android.util.Patterns;
+import android.widget.ImageView;
 import android.widget.Toast;
 
 import androidx.appcompat.app.AppCompatActivity;
@@ -20,10 +24,18 @@ import java.util.Map;
 
 public class RegistrationActivity extends AppCompatActivity {
 
-    private TextInputEditText etName, etMobile, etPin, etBusinessName, etAddress, etBirthDate;
-    private MaterialButton btnRegister;
+    // UI Components
+    private TextInputEditText etName, etMobile, etPin, etBusinessName, etAddress, etBirthDate, etEmail;
+    private MaterialButton btnRegister, btnAddSignature;
+    private ImageView ivSignaturePreview;
+
+    // Firebase and SharedPreferences
     private FirebaseFirestore db;
     private SharedPreferences sharedPreferences;
+
+    // Signature handling
+    private static final int SIGNATURE_REQUEST_CODE = 100;
+    private String digitalSignatureBase64 = "";
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -45,7 +57,12 @@ public class RegistrationActivity extends AppCompatActivity {
         etBusinessName = findViewById(R.id.etBusinessName);
         etAddress = findViewById(R.id.etAddress);
         etBirthDate = findViewById(R.id.etBirthDate);
+        etEmail = findViewById(R.id.etEmail);
         btnRegister = findViewById(R.id.btnRegister);
+
+        // Signature components
+        ivSignaturePreview = findViewById(R.id.ivSignaturePreview);
+        btnAddSignature = findViewById(R.id.btnAddSignature);
     }
 
     private void setupDatePicker() {
@@ -74,6 +91,31 @@ public class RegistrationActivity extends AppCompatActivity {
             startActivity(new Intent(RegistrationActivity.this, LoginActivity.class));
             finish();
         });
+
+        // Signature button click listener
+        btnAddSignature.setOnClickListener(v -> {
+            Intent intent = new Intent(RegistrationActivity.this, SignatureActivity.class);
+            startActivityForResult(intent, SIGNATURE_REQUEST_CODE);
+        });
+    }
+
+    @Override
+    protected void onActivityResult(int requestCode, int resultCode, Intent data) {
+        super.onActivityResult(requestCode, resultCode, data);
+
+        if (requestCode == SIGNATURE_REQUEST_CODE && resultCode == RESULT_OK && data != null) {
+            digitalSignatureBase64 = data.getStringExtra("signature");
+
+            if (digitalSignatureBase64 != null && !digitalSignatureBase64.isEmpty()) {
+                // Convert base64 back to bitmap for preview
+                byte[] decodedString = Base64.decode(digitalSignatureBase64, Base64.DEFAULT);
+                Bitmap decodedBitmap = BitmapFactory.decodeByteArray(decodedString, 0, decodedString.length);
+                ivSignaturePreview.setImageBitmap(decodedBitmap);
+                btnAddSignature.setText("Update Signature");
+
+                Toast.makeText(this, "Signature captured successfully", Toast.LENGTH_SHORT).show();
+            }
+        }
     }
 
     private void registerUser() {
@@ -83,55 +125,99 @@ public class RegistrationActivity extends AppCompatActivity {
         String businessName = etBusinessName.getText().toString().trim();
         String address = etAddress.getText().toString().trim();
         String birthDate = etBirthDate.getText().toString().trim();
+        String email = etEmail.getText().toString().trim();
 
-        if (validateInputs(name, mobile, pin, businessName, address, birthDate)) {
-            // Check if mobile number already exists
-            db.collection("users")
-                    .whereEqualTo("mobile", mobile)
-                    .get()
-                    .addOnCompleteListener(task -> {
-                        if (task.isSuccessful()) {
-                            if (!task.getResult().isEmpty()) {
-                                Toast.makeText(this, "Mobile number already registered!", Toast.LENGTH_SHORT).show();
-                            } else {
-                                saveUserToFirebase(name, mobile, pin, businessName, address, birthDate);
-                            }
-                        } else {
-                            Toast.makeText(this, "Error checking user: " + task.getException().getMessage(), Toast.LENGTH_SHORT).show();
-                        }
-                    });
+        if (validateInputs(name, mobile, pin, businessName, address, birthDate, email)) {
+            // Check if mobile number or email already exists
+            checkUserExists(mobile, email, name, pin, businessName, address, birthDate);
         }
     }
 
-    private boolean validateInputs(String name, String mobile, String pin, String businessName, String address, String birthDate) {
+    private void checkUserExists(String mobile, String email, String name, String pin, String businessName, String address, String birthDate) {
+        // Check mobile number first
+        db.collection("users")
+                .whereEqualTo("mobile", mobile)
+                .get()
+                .addOnCompleteListener(task -> {
+                    if (task.isSuccessful()) {
+                        if (!task.getResult().isEmpty()) {
+                            Toast.makeText(this, "Mobile number already registered!", Toast.LENGTH_SHORT).show();
+                        } else {
+                            // Check email
+                            checkEmailExists(email, mobile, name, pin, businessName, address, birthDate);
+                        }
+                    } else {
+                        Toast.makeText(this, "Error checking mobile: " + task.getException().getMessage(), Toast.LENGTH_SHORT).show();
+                    }
+                });
+    }
+
+    private void checkEmailExists(String email, String mobile, String name, String pin, String businessName, String address, String birthDate) {
+        db.collection("users")
+                .whereEqualTo("email", email)
+                .get()
+                .addOnCompleteListener(task -> {
+                    if (task.isSuccessful()) {
+                        if (!task.getResult().isEmpty()) {
+                            Toast.makeText(this, "Email already registered!", Toast.LENGTH_SHORT).show();
+                        } else {
+                            // Both mobile and email are unique, proceed with registration
+                            saveUserToFirebase(name, mobile, pin, businessName, address, birthDate, email);
+                        }
+                    } else {
+                        Toast.makeText(this, "Error checking email: " + task.getException().getMessage(), Toast.LENGTH_SHORT).show();
+                    }
+                });
+    }
+
+    private boolean validateInputs(String name, String mobile, String pin, String businessName, String address, String birthDate, String email) {
         if (TextUtils.isEmpty(name)) {
             etName.setError("Name is required");
+            etName.requestFocus();
             return false;
         }
         if (TextUtils.isEmpty(mobile) || mobile.length() != 10) {
             etMobile.setError("Valid 10-digit mobile number is required");
+            etMobile.requestFocus();
             return false;
         }
         if (TextUtils.isEmpty(pin) || pin.length() != 4) {
             etPin.setError("4-digit PIN is required");
+            etPin.requestFocus();
             return false;
         }
         if (TextUtils.isEmpty(businessName)) {
             etBusinessName.setError("Business name is required");
+            etBusinessName.requestFocus();
             return false;
         }
         if (TextUtils.isEmpty(address)) {
             etAddress.setError("Address is required");
+            etAddress.requestFocus();
             return false;
         }
         if (TextUtils.isEmpty(birthDate)) {
             etBirthDate.setError("Birth date is required");
+            etBirthDate.requestFocus();
+            return false;
+        }
+        if (TextUtils.isEmpty(email) || !Patterns.EMAIL_ADDRESS.matcher(email).matches()) {
+            etEmail.setError("Valid email address is required");
+            etEmail.requestFocus();
+            return false;
+        }
+        if (digitalSignatureBase64.isEmpty()) {
+            Toast.makeText(this, "Digital signature is required. Please draw your signature.", Toast.LENGTH_LONG).show();
+            btnAddSignature.requestFocus();
             return false;
         }
         return true;
     }
 
-    private void saveUserToFirebase(String name, String mobile, String pin, String businessName, String address, String birthDate) {
+    private void saveUserToFirebase(String name, String mobile, String pin, String businessName, String address, String birthDate, String email) {
+        // Show loading message
+        Toast.makeText(this, "Saving registration data...", Toast.LENGTH_SHORT).show();
+
         Map<String, Object> user = new HashMap<>();
         user.put("name", name);
         user.put("mobile", mobile);
@@ -139,7 +225,10 @@ public class RegistrationActivity extends AppCompatActivity {
         user.put("businessName", businessName);
         user.put("address", address);
         user.put("birthDate", birthDate);
+        user.put("email", email);
+        user.put("digitalSignature", digitalSignatureBase64); // Save signature as base64 string
         user.put("timestamp", System.currentTimeMillis());
+        user.put("createdDate", new java.text.SimpleDateFormat("dd/MM/yyyy HH:mm:ss").format(new java.util.Date()));
 
         db.collection("users")
                 .document(mobile) // Using mobile as document ID
@@ -147,8 +236,8 @@ public class RegistrationActivity extends AppCompatActivity {
                 .addOnSuccessListener(aVoid -> {
                     Toast.makeText(this, "Registration successful!", Toast.LENGTH_SHORT).show();
 
-                    // Save login state
-                    saveLoginState(mobile, name);
+                    // Use SplashActivity's enhanced session management
+                    SplashActivity.saveLoginSession(sharedPreferences, mobile, name, true);
 
                     // Navigate to dashboard
                     Intent intent = new Intent(RegistrationActivity.this, MainActivity.class);
@@ -158,15 +247,12 @@ public class RegistrationActivity extends AppCompatActivity {
                     finish();
                 })
                 .addOnFailureListener(e -> {
-                    Toast.makeText(this, "Registration failed: " + e.getMessage(), Toast.LENGTH_SHORT).show();
+                    Toast.makeText(this, "Registration failed: " + e.getMessage(), Toast.LENGTH_LONG).show();
                 });
     }
 
-    private void saveLoginState(String mobile, String name) {
-        SharedPreferences.Editor editor = sharedPreferences.edit();
-        editor.putBoolean("isLoggedIn", true);
-        editor.putString("userMobile", mobile);
-        editor.putString("userName", name);
-        editor.apply();
+    @Override
+    protected void onDestroy() {
+        super.onDestroy();
     }
 }

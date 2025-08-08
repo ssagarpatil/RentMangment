@@ -85,6 +85,15 @@
                         android:layout_marginBottom="12dp" />
 
                     <TextView
+                        android:id="@+id/tvEmail"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:text="Email: Loading..."
+                        android:textSize="16sp"
+                        android:textColor="#666"
+                        android:layout_marginBottom="4dp" />
+
+                    <TextView
                         android:id="@+id/tvBusinessName"
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"
@@ -109,6 +118,59 @@
                         android:text="Birth Date: Loading..."
                         android:textSize="16sp"
                         android:textColor="#666" />
+
+                </LinearLayout>
+            </androidx.cardview.widget.CardView>
+
+            <!-- Digital Signature Card -->
+            <androidx.cardview.widget.CardView
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginBottom="16dp"
+                app:cardCornerRadius="8dp"
+                app:cardElevation="4dp">
+
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:orientation="vertical"
+                    android:padding="16dp">
+
+                    <TextView
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:text="Digital Signature"
+                        android:textSize="18sp"
+                        android:textStyle="bold"
+                        android:textColor="#333"
+                        android:layout_marginBottom="12dp" />
+
+                    <androidx.cardview.widget.CardView
+                        android:layout_width="match_parent"
+                        android:layout_height="120dp"
+                        app:cardCornerRadius="6dp"
+                        app:cardElevation="2dp"
+                        app:cardBackgroundColor="#FAFAFA">
+
+                        <ImageView
+                            android:id="@+id/ivUserSignature"
+                            android:layout_width="match_parent"
+                            android:layout_height="match_parent"
+                            android:layout_margin="8dp"
+                            android:scaleType="centerInside"
+                            android:src="@drawable/ic_signature_placeholder"
+                            android:background="@drawable/dashed_border" />
+
+                    </androidx.cardview.widget.CardView>
+
+                    <TextView
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:text="Tap to view in full screen"
+                        android:textSize="12sp"
+                        android:textColor="#999"
+                        android:gravity="center"
+                        android:layout_marginTop="8dp" />
 
                 </LinearLayout>
             </androidx.cardview.widget.CardView>

@@ -21,6 +21,7 @@
             android:layout_gravity="center"
             android:layout_marginBottom="32dp" />
 
+        <!-- Name Field -->
         <com.google.android.material.textfield.TextInputLayout
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
@@ -36,6 +37,7 @@
                 android:inputType="textPersonName" />
         </com.google.android.material.textfield.TextInputLayout>
 
+        <!-- Mobile Field -->
         <com.google.android.material.textfield.TextInputLayout
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
@@ -52,6 +54,23 @@
                 android:maxLength="10" />
         </com.google.android.material.textfield.TextInputLayout>
 
+        <!-- Email Field -->
+        <com.google.android.material.textfield.TextInputLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginBottom="16dp"
+            app:boxStrokeColor="#4CAF50"
+            app:hintTextColor="#4CAF50">
+
+            <com.google.android.material.textfield.TextInputEditText
+                android:id="@+id/etEmail"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:hint="Email Address"
+                android:inputType="textEmailAddress" />
+        </com.google.android.material.textfield.TextInputLayout>
+
+        <!-- PIN Field -->
         <com.google.android.material.textfield.TextInputLayout
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
@@ -69,6 +88,7 @@
                 android:maxLength="4" />
         </com.google.android.material.textfield.TextInputLayout>
 
+        <!-- Business Name Field -->
         <com.google.android.material.textfield.TextInputLayout
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
@@ -84,6 +104,7 @@
                 android:inputType="text" />
         </com.google.android.material.textfield.TextInputLayout>
 
+        <!-- Address Field -->
         <com.google.android.material.textfield.TextInputLayout
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
@@ -100,10 +121,11 @@
                 android:minLines="2" />
         </com.google.android.material.textfield.TextInputLayout>
 
+        <!-- Birth Date Field -->
         <com.google.android.material.textfield.TextInputLayout
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:layout_marginBottom="24dp"
+            android:layout_marginBottom="16dp"
             app:boxStrokeColor="#4CAF50"
             app:hintTextColor="#4CAF50">
 
@@ -117,6 +139,57 @@
                 android:clickable="true" />
         </com.google.android.material.textfield.TextInputLayout>
 
+        <!-- Digital Signature Field -->
+        <!-- Digital Signature Section -->
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="vertical"
+            android:layout_marginBottom="24dp">
+
+            <TextView
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:text="Digital Signature"
+                android:textSize="16sp"
+                android:textStyle="bold"
+                android:textColor="#333"
+                android:layout_marginBottom="8dp" />
+
+            <androidx.cardview.widget.CardView
+                android:layout_width="match_parent"
+                android:layout_height="160dp"
+                android:layout_marginBottom="8dp"
+                app:cardCornerRadius="8dp"
+                app:cardElevation="2dp"
+                app:cardBackgroundColor="#F8F8F8">
+
+                <ImageView
+                    android:id="@+id/ivSignaturePreview"
+                    android:layout_width="match_parent"
+                    android:layout_height="match_parent"
+                    android:layout_margin="8dp"
+                    android:scaleType="centerInside"
+                    android:background="@drawable/dashed_border"
+                    android:src="@drawable/ic_signature_placeholder" />
+
+            </androidx.cardview.widget.CardView>
+
+            <com.google.android.material.button.MaterialButton
+                android:id="@+id/btnAddSignature"
+                android:layout_width="match_parent"
+                android:layout_height="48dp"
+                android:text="Draw Signature"
+                android:textSize="14sp"
+                android:backgroundTint="#2196F3"
+                app:cornerRadius="6dp"
+                app:icon="@drawable/ic_edit"
+                app:iconGravity="textStart" />
+
+        </LinearLayout>
+
+
+        <!-- Register Button -->
         <com.google.android.material.button.MaterialButton
             android:id="@+id/btnRegister"
             android:layout_width="match_parent"
@@ -127,6 +200,7 @@
             app:cornerRadius="8dp"
             android:layout_marginBottom="16dp" />
 
+        <!-- Login Redirect -->
         <TextView
             android:id="@+id/tvLoginRedirect"
             android:layout_width="wrap_content"
