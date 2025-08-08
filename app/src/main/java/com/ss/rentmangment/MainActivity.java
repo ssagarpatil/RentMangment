@@ -1,5 +1,7 @@
 package com.ss.rentmangment;
 
+import android.app.AlertDialog;
+import android.content.DialogInterface;
 import android.content.Intent;
 import android.content.SharedPreferences;
 import android.graphics.Bitmap;
@@ -38,7 +40,7 @@ public class MainActivity extends AppCompatActivity {
         sharedPreferences = getSharedPreferences("UserPrefs", MODE_PRIVATE);
 
         getUserData();
-//        setupClickListeners();
+        setupClickListeners(); // UNCOMMENTED THIS - This was your issue!
     }
 
     private void initializeViews() {
@@ -133,29 +135,61 @@ public class MainActivity extends AppCompatActivity {
         }
     }
 
-//    private void setupClickListeners() {
-//        btnLogout.setOnClickListener(v -> logout());
-//
-//        // Optional: Click listener to view signature in full screen
-//        ivUserSignature.setOnClickListener(v -> viewSignatureFullScreen());
-//    }
+    private void setupClickListeners() {
+        // Logout button click listener with confirmation dialog
+        btnLogout.setOnClickListener(v -> showLogoutConfirmationDialog());
 
-//    private void viewSignatureFullScreen() {
-//        // Optional method to view signature in full screen
-//        Intent intent = new Intent(this, SignatureViewActivity.class);
-//        intent.putExtra("userMobile", userMobile);
-//        startActivity(intent);
-//    }
+        // Optional: Click listener to view signature in full screen
+        ivUserSignature.setOnClickListener(v -> {
+            Toast.makeText(this, "Signature view clicked", Toast.LENGTH_SHORT).show();
+            // You can uncomment this if you create SignatureViewActivity later
+            // viewSignatureFullScreen();
+        });
+    }
 
+    // NEW METHOD: Show confirmation dialog before logout
+    private void showLogoutConfirmationDialog() {
+        AlertDialog.Builder builder = new AlertDialog.Builder(this);
+        builder.setTitle("Confirm Logout");
+        builder.setMessage("Are you sure you want to logout?");
+        builder.setIcon(android.R.drawable.ic_dialog_alert);
+
+        // Positive button - Logout
+        builder.setPositiveButton("Yes, Logout", new DialogInterface.OnClickListener() {
+            @Override
+            public void onClick(DialogInterface dialog, int which) {
+                logout(); // Call the actual logout method
+            }
+        });
+
+        // Negative button - Cancel
+        builder.setNegativeButton("Cancel", new DialogInterface.OnClickListener() {
+            @Override
+            public void onClick(DialogInterface dialog, int which) {
+                dialog.dismiss(); // Just close the dialog
+            }
+        });
+
+        // Create and show the dialog
+        AlertDialog dialog = builder.create();
+        dialog.show();
+
+        // Optional: Customize button colors
+        dialog.getButton(AlertDialog.BUTTON_POSITIVE).setTextColor(getResources().getColor(android.R.color.holo_red_dark));
+        dialog.getButton(AlertDialog.BUTTON_NEGATIVE).setTextColor(getResources().getColor(android.R.color.holo_blue_dark));
+    }
+
+    // COMPLETE LOGOUT METHOD
     private void logout() {
-        // Clear SharedPreferences
+        // Clear all SharedPreferences data (including enhanced session data)
         SharedPreferences.Editor editor = sharedPreferences.edit();
         editor.clear();
         editor.apply();
 
+        // Show logout message
         Toast.makeText(this, "Logged out successfully", Toast.LENGTH_SHORT).show();
 
-        // Navigate to Login
+        // Navigate to Login with proper flags
         Intent intent = new Intent(MainActivity.this, LoginActivity.class);
         intent.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_CLEAR_TASK);
         startActivity(intent);
