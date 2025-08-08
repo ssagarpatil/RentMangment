@@ -1,0 +1,64 @@
+<?xml version="1.0" encoding="utf-8"?>
+<menu xmlns:android="http://schemas.android.com/apk/res/android">
+
+    <group android:checkableBehavior="none">
+
+        <item
+            android:id="@+id/nav_edit_profile"
+            android:icon="@drawable/ic_edit"
+            android:title="Edit Profile" />
+
+        <item
+            android:id="@+id/nav_change_pin"
+            android:icon="@drawable/ic_change_pin"
+            android:title="Change PIN" />
+
+    </group>
+
+    <group android:checkableBehavior="none">
+
+        <item android:title="App Settings">
+            <menu>
+                <item
+                    android:id="@+id/nav_notifications"
+                    android:title="Notifications" />
+
+                <item
+                    android:id="@+id/nav_privacy"
+                    android:title="Privacy &amp; Security" />
+
+                <item
+                    android:id="@+id/nav_backup"
+                    android:title="Backup &amp; Sync" />
+
+            </menu>
+        </item>
+
+    </group>
+
+    <group android:checkableBehavior="none">
+
+        <item android:title="Support">
+            <menu>
+                <item
+                    android:id="@+id/nav_help"
+                    android:title="Help Center" />
+
+                <item
+                    android:id="@+id/nav_about"
+                    android:title="About App" />
+
+            </menu>
+        </item>
+
+    </group>
+
+    <group android:checkableBehavior="none">
+
+        <item
+            android:id="@+id/nav_logout"
+            android:title="Logout" />
+
+    </group>
+
+</menu>
