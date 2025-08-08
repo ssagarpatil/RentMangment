@@ -41,10 +41,10 @@ public class DashboardActivity extends AppCompatActivity {
             highlightTab(btnTenants);
         });
 
-        btnPayments.setOnClickListener(v -> {
-            loadFragment(new PaymentsFragment());
-            highlightTab(btnPayments);
-        });
+//        btnPayments.setOnClickListener(v -> {
+//            loadFragment(new PaymentsFragment());
+//            highlightTab(btnPayments);
+//        });
 
         btnSettings.setOnClickListener(v -> {
             loadFragment(new SettingsFragment());
