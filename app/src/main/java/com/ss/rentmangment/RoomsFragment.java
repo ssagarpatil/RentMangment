@@ -13,21 +13,18 @@ import android.view.View;
 import android.view.ViewGroup;
 import android.widget.*;
 
-import com.google.firebase.auth.FirebaseAuth;
+import com.google.android.material.floatingactionbutton.FloatingActionButton;
 import com.google.firebase.database.*;
-import com.ss.rentmangment.R;
+import com.ss.rentmangment.RoomModel;
 import com.ss.rentmangment.RoomsAdapter;
 
-
 import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.List;
 
 public class RoomsFragment extends Fragment {
 
     RecyclerView rvRooms;
-    ImageButton dummy; // placeholder if needed
-    com.google.android.material.floatingactionbutton.FloatingActionButton fabAdd;
+    FloatingActionButton fabAdd;
     RoomsAdapter adapter;
     List<RoomModel> roomList = new ArrayList<>();
 
@@ -58,13 +55,15 @@ public class RoomsFragment extends Fragment {
         });
         rvRooms.setAdapter(adapter);
 
-        // adminId from FirebaseAuth if logged-in
-        if (FirebaseAuth.getInstance().getCurrentUser() != null) {
-            adminId = FirebaseAuth.getInstance().getCurrentUser().getUid();
+        // **Use SharedPreferences to get adminId** (assuming you store mobile or UID under "mobile")
+        if (getContext() != null) {
+            adminId = getContext().getSharedPreferences("UserPrefs", getContext().MODE_PRIVATE)
+                    .getString("mobile", "default_admin"); // default fallback
         } else {
-            adminId = "default_admin"; // fallback for dev/testing
+            adminId = "default_admin";
         }
 
+        // Update DatabaseReference path accordingly
         roomsRef = FirebaseDatabase.getInstance().getReference()
                 .child("Admins").child(adminId).child("Rooms");
 
@@ -116,30 +115,27 @@ public class RoomsFragment extends Fragment {
         Button btnSave = dialogView.findViewById(R.id.btnSave);
         Button btnCancel = dialogView.findViewById(R.id.btnCancel);
 
-        // spinner data
         String[] types = new String[]{"1BHK", "2BHK", "1RK", "1R", "Dormitory"};
         ArrayAdapter<String> spAdapter = new ArrayAdapter<>(getContext(), android.R.layout.simple_spinner_item, types);
         spAdapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item);
         spinnerType.setAdapter(spAdapter);
 
-        // show/hide student capacity
         cbStudents.setOnCheckedChangeListener((buttonView, isChecked) -> {
             etStudentCapacity.setVisibility(isChecked ? View.VISIBLE : View.GONE);
         });
 
-        // if editing, prefill values
-        final boolean isEdit = editRoom != null;
+        boolean isEdit = editRoom != null;
         if (isEdit) {
             etName.setText(editRoom.getName());
-            // set spinner selection
-            for (int i = 0; i < types.length; i++) if (types[i].equals(editRoom.getType())) spinnerType.setSelection(i);
-            String allowed = editRoom.getAllowedFor();
-            if (allowed != null) {
-                cbFamily.setChecked(allowed.contains("Family"));
-                cbStudents.setChecked(allowed.contains("Students"));
+            for (int i = 0; i < types.length; i++)
+                if (types[i].equals(editRoom.getType()))
+                    spinnerType.setSelection(i);
+            if (editRoom.getAllowedFor() != null) {
+                cbFamily.setChecked(editRoom.getAllowedFor().contains("Family"));
+                cbStudents.setChecked(editRoom.getAllowedFor().contains("Students"));
             }
             etCapacity.setText(String.valueOf(editRoom.getCapacity()));
-            etStudentCapacity.setText(""); // optional: not stored separately in model
+            etStudentCapacity.setText(""); // no separate field, keep empty
             etRent.setText(String.valueOf(editRoom.getRent()));
             etDeposit.setText(String.valueOf(editRoom.getDeposit()));
             etMaintenance.setText(String.valueOf(editRoom.getMaintenanceCharges()));
@@ -166,7 +162,7 @@ public class RoomsFragment extends Fragment {
             String notes = etNotes.getText().toString().trim();
 
             if (TextUtils.isEmpty(name)) {
-                etName.setError("Enter room name");
+                etName.setError("Enter name");
                 return;
             }
             if (TextUtils.isEmpty(sCapacity)) {
@@ -174,16 +170,20 @@ public class RoomsFragment extends Fragment {
                 return;
             }
 
-            int capacity = Integer.parseInt(sCapacity);
-            int rent = TextUtils.isEmpty(sRent) ? 0 : Integer.parseInt(sRent);
-            int deposit = TextUtils.isEmpty(sDeposit) ? 0 : Integer.parseInt(sDeposit);
-            int maintenance = TextUtils.isEmpty(sMaintenance) ? 0 : Integer.parseInt(sMaintenance);
-
+            int capacity, rent, deposit, maintenance;
+            try {
+                capacity = Integer.parseInt(sCapacity);
+                rent = TextUtils.isEmpty(sRent) ? 0 : Integer.parseInt(sRent);
+                deposit = TextUtils.isEmpty(sDeposit) ? 0 : Integer.parseInt(sDeposit);
+                maintenance = TextUtils.isEmpty(sMaintenance) ? 0 : Integer.parseInt(sMaintenance);
+            } catch (NumberFormatException e) {
+                Toast.makeText(getContext(), "Invalid number values", Toast.LENGTH_SHORT).show();
+                return;
+            }
             long now = System.currentTimeMillis();
+
             if (isEdit) {
-                // update existing
                 String roomId = editRoom.getRoomId();
-                // keep occupied as before
                 int occupied = editRoom.getOccupied();
                 RoomModel updated = new RoomModel(roomId, name, type, allowedFor, capacity, occupied, rent, deposit, maintenance, notes, now);
                 roomsRef.child(roomId).setValue(updated)
@@ -193,20 +193,18 @@ public class RoomsFragment extends Fragment {
                         })
                         .addOnFailureListener(e -> Toast.makeText(getContext(), "Update failed: " + e.getMessage(), Toast.LENGTH_SHORT).show());
             } else {
-                // new room
                 String newId = roomsRef.push().getKey();
                 if (newId == null) {
-                    Toast.makeText(getContext(), "Unable to create id", Toast.LENGTH_SHORT).show();
+                    Toast.makeText(getContext(), "Error creating new id", Toast.LENGTH_SHORT).show();
                     return;
                 }
-                int occupied = 0; // new room starts empty
-                RoomModel newRoom = new RoomModel(newId, name, type, allowedFor, capacity, occupied, rent, deposit, maintenance, notes, now);
+                RoomModel newRoom = new RoomModel(newId, name, type, allowedFor, capacity, 0, rent, deposit, maintenance, notes, now);
                 roomsRef.child(newId).setValue(newRoom)
                         .addOnSuccessListener(aVoid -> {
                             Toast.makeText(getContext(), "Room added", Toast.LENGTH_SHORT).show();
                             dialog.dismiss();
                         })
-                        .addOnFailureListener(e -> Toast.makeText(getContext(), "Save failed: " + e.getMessage(), Toast.LENGTH_SHORT).show());
+                        .addOnFailureListener(e -> Toast.makeText(getContext(), "Add failed: " + e.getMessage(), Toast.LENGTH_SHORT).show());
             }
         });
 
@@ -216,10 +214,10 @@ public class RoomsFragment extends Fragment {
     private void confirmDelete(RoomModel room) {
         new AlertDialog.Builder(getContext())
                 .setTitle("Delete room")
-                .setMessage("Are you sure you want to delete " + room.getName() + "? (Make sure no tenant assigned.)")
+                .setMessage("Are you sure you want to delete " + room.getName() + "? Ensure no tenant is assigned.")
                 .setPositiveButton("Delete", (dialog, which) -> {
                     roomsRef.child(room.getRoomId()).removeValue()
-                            .addOnSuccessListener(aVoid -> Toast.makeText(getContext(), "Deleted", Toast.LENGTH_SHORT).show())
+                            .addOnSuccessListener(aVoid -> Toast.makeText(getContext(), "Room deleted", Toast.LENGTH_SHORT).show())
                             .addOnFailureListener(e -> Toast.makeText(getContext(), "Delete failed: " + e.getMessage(), Toast.LENGTH_SHORT).show());
                 })
                 .setNegativeButton("Cancel", null)
