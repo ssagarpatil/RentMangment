@@ -125,39 +125,41 @@ public class SettingsFragment extends Fragment {
     }
 
     private void fetchUserDataFromRealtimeDatabase() {
-        usersRef.child(userMobile).addListenerForSingleValueEvent(new ValueEventListener() {
-            @Override
-            public void onDataChange(DataSnapshot dataSnapshot) {
-                if (dataSnapshot.exists()) {
-                    // Fetch all user data including signature
-                    String businessName = dataSnapshot.child("businessName").getValue(String.class);
-                    String address = dataSnapshot.child("address").getValue(String.class);
-                    String birthDate = dataSnapshot.child("birthDate").getValue(String.class);
-                    String email = dataSnapshot.child("email").getValue(String.class);
-                    String digitalSignature = dataSnapshot.child("digitalSignature").getValue(String.class);
+        // Now we look inside "info"
+        usersRef.child(userMobile).child("info")
+                .addListenerForSingleValueEvent(new ValueEventListener() {
+                    @Override
+                    public void onDataChange(DataSnapshot dataSnapshot) {
+                        if (dataSnapshot.exists()) {
+                            // Fetch all user data including signature
+                            String businessName = dataSnapshot.child("businessName").getValue(String.class);
+                            String address = dataSnapshot.child("address").getValue(String.class);
+                            String birthDate = dataSnapshot.child("birthDate").getValue(String.class);
+                            String email = dataSnapshot.child("email").getValue(String.class);
+                            String digitalSignature = dataSnapshot.child("digitalSignature").getValue(String.class);
 
-                    // Update UI with fetched data
-                    tvBusinessName.setText("Business: " + (businessName != null ? businessName : "Not specified"));
-                    tvAddress.setText("Address: " + (address != null ? address : "Not specified"));
-                    tvBirthDate.setText("Birth Date: " + (birthDate != null ? birthDate : "Not specified"));
-                    tvEmail.setText("Email: " + (email != null ? email : "Not specified"));
+                            // Update UI with fetched data
+                            tvBusinessName.setText("Business: " + (businessName != null ? businessName : "Not specified"));
+                            tvAddress.setText("Address: " + (address != null ? address : "Not specified"));
+                            tvBirthDate.setText("Birth Date: " + (birthDate != null ? birthDate : "Not specified"));
+                            tvEmail.setText("Email: " + (email != null ? email : "Not specified"));
 
-                    // Display digital signature
-                    displaySignature(digitalSignature);
-                } else {
-                    if (getContext() != null) {
-                        Toast.makeText(getContext(), "User data not found", Toast.LENGTH_SHORT).show();
+                            // Display digital signature
+                            displaySignature(digitalSignature);
+                        } else {
+                            if (getContext() != null) {
+                                Toast.makeText(getContext(), "User data not found", Toast.LENGTH_SHORT).show();
+                            }
+                        }
                     }
-                }
-            }
 
-            @Override
-            public void onCancelled(DatabaseError databaseError) {
-                if (getContext() != null) {
-                    Toast.makeText(getContext(), "Error loading user data: " + databaseError.getMessage(), Toast.LENGTH_SHORT).show();
-                }
-            }
-        });
+                    @Override
+                    public void onCancelled(DatabaseError databaseError) {
+                        if (getContext() != null) {
+                            Toast.makeText(getContext(), "Error loading user data: " + databaseError.getMessage(), Toast.LENGTH_SHORT).show();
+                        }
+                    }
+                });
     }
 
     private void displaySignature(String digitalSignatureBase64) {
